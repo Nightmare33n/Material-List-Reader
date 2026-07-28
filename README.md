@@ -1,32 +1,60 @@
-# React + TypeScript + Vite
+# Material List Reader
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+App web (React + Vite + TypeScript) para visualizar listas de materiales estilo Litematica con iconos de bloques y una UI inspirada en el inventario de Minecraft.
 
-Currently, two official plugins are available:
+## Uso
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Abre la URL que muestre Vite (por defecto `http://localhost:5173`), arrastra un archivo `.json` con la material list o haz clic en la zona de drop para elegirlo desde el explorador.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Formato del JSON de entrada
 
 ```json
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+  "name": "entrada",
+  "items": [
+    { "id": "minecraft:dirt", "count": 11 },
+    { "id": "minecraft:grass_block", "count": 619 }
+  ]
 }
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- `name`: título de la lista (se muestra en la barra superior del panel).
+- `items`: array de `{ id, count }`. `id` puede llevar o no el prefijo `minecraft:`.
+
+## Funcionalidad
+
+- Drag & drop o selección manual de archivo, con validación de formato.
+- Grid tipo inventario de Minecraft: slots beveled, iconos pixelados, contador tipo stack, tooltip con nombre formateado y cantidad exacta.
+- Búsqueda por nombre/id y orden por cantidad (asc/desc) o alfabético.
+- Contador de tipos de bloque únicos y total de bloques.
+
+## Resolución de iconos
+
+Los iconos se resuelven en tiempo real contra el dataset público [`PrismarineJS/minecraft-assets`](https://github.com/PrismarineJS/minecraft-assets) (vía CDN de jsDelivr, versión `1.21.11`), sin empaquetar texturas de Mojang en el repo.
+
+Orden de resolución por bloque (`src/textureResolver.ts`):
+
+1. Textura oficial resuelta desde `blocks_textures.json` (mapping block → textura real, incluye casos donde el bloque no tiene textura propia, ej. `mangrove_stairs` → `mangrove_planks`).
+2. `blocks/<id>.png` (coincidencia directa).
+3. `items/<id>.png` (coincidencia directa como item).
+4. `blocks/<id>_top.png` (bloques con textura superior distinta, ej. troncos).
+5. Para variantes de forma (`_wall`, `_stairs`, `_slab`, `_fence`, `_fence_gate`, `_door`, `_button`, `_pressure_plate`) que el manifest no resolvió: se prueba la textura del material base y su forma plural (ej. `red_nether_brick_wall` → `red_nether_bricks`).
+6. Si ninguna candidata carga, se muestra un placeholder estilo "missing texture" de Minecraft (cuadros magenta/negro).
+
+El manifest de texturas se cachea en `localStorage` por 7 días para no volver a descargarlo en cada visita.
+
+## Limitaciones conocidas
+
+- Algunos bloques muy recientes o con formas irregulares pueden no tener textura mapeada y caer al placeholder.
+- Los iconos son texturas planas (2D), no los renders isométricos que Minecraft muestra en su inventario real para bloques con forma (escaleras, losas, etc.).
+
+## Stack
+
+- React 19 + TypeScript
+- Vite
+- Sin dependencias de UI externas (CSS propio inspirado en el GUI de Minecraft)
