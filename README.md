@@ -1,4 +1,5 @@
 # Material List Reader
+<img width="1529" height="642" alt="image" src="https://github.com/user-attachments/assets/f90a23ef-93dd-48f5-8093-0f4f6058b951" />
 
 App web (React + Vite + TypeScript) para visualizar listas de materiales estilo Litematica con iconos de bloques y una UI inspirada en el inventario de Minecraft.
 
