@@ -1,3 +1,5 @@
+import type { CountMode } from "./Slot";
+
 export type SortMode = "count-desc" | "count-asc" | "name-asc";
 
 interface ToolbarProps {
@@ -6,6 +8,8 @@ interface ToolbarProps {
   onSearchChange: (v: string) => void;
   sortMode: SortMode;
   onSortModeChange: (v: SortMode) => void;
+  countMode: CountMode;
+  onCountModeChange: (v: CountMode) => void;
   totalUnique: number;
   totalCount: number;
   onReset: () => void;
@@ -17,6 +21,8 @@ export default function Toolbar({
   onSearchChange,
   sortMode,
   onSortModeChange,
+  countMode,
+  onCountModeChange,
   totalUnique,
   totalCount,
   onReset,
@@ -29,6 +35,7 @@ export default function Toolbar({
           {totalUnique} tipos · {totalCount.toLocaleString()} bloques
         </span>
       </div>
+
       <div className="toolbar-controls">
         <input
           type="text"
@@ -37,6 +44,22 @@ export default function Toolbar({
           onChange={(e) => onSearchChange(e.target.value)}
           className="toolbar-search"
         />
+
+        <div className="toolbar-toggle">
+          <button
+            className={countMode === "stacks" ? "toolbar-toggle-on" : ""}
+            onClick={() => onCountModeChange("stacks")}
+          >
+            Stacks
+          </button>
+          <button
+            className={countMode === "items" ? "toolbar-toggle-on" : ""}
+            onClick={() => onCountModeChange("items")}
+          >
+            Items
+          </button>
+        </div>
+
         <select
           value={sortMode}
           onChange={(e) => onSortModeChange(e.target.value as SortMode)}
@@ -46,6 +69,7 @@ export default function Toolbar({
           <option value="count-asc">Menor cantidad</option>
           <option value="name-asc">Nombre A-Z</option>
         </select>
+
         <button className="toolbar-reset" onClick={onReset}>
           Cargar otro
         </button>

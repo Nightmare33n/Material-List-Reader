@@ -186,8 +186,22 @@ body {
 
 .material-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
   gap: 4px;
+}
+
+/*
+  Shared WebGL surface for every block. It is pinned to the viewport rather than sized to
+  the grid so the framebuffer stays small no matter how long the list is, and sits behind
+  the slot outlines and tooltips.
+*/
+.block-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .grid-empty {
@@ -215,23 +229,29 @@ body {
 }
 
 .slot-icon-wrap {
-  width: 70%;
-  height: 70%;
+  width: 84%;
+  height: 84%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.slot-icon {
+/* Reserves the area the shared WebGL overlay draws this block into. */
+.block-3d {
   width: 100%;
   height: 100%;
+}
+
+.block-2d {
+  width: 84%;
+  height: 84%;
   object-fit: contain;
   image-rendering: pixelated;
 }
 
-.slot-icon-missing {
-  width: 100%;
-  height: 100%;
+.block-missing {
+  width: 84%;
+  height: 84%;
   background:
     linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%) 0 0 / 8px 8px,
     linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%) 4px 4px / 8px 8px,
@@ -247,6 +267,15 @@ body {
   color: #fff;
   text-shadow: 1px 1px 0 #000;
   pointer-events: none;
+}
+
+.slot-count-sm {
+  font-size: 10px;
+}
+
+.slot-count-xs {
+  font-size: 8px;
+  right: 2px;
 }
 
 .slot-tooltip {
@@ -274,7 +303,40 @@ body {
   font-size: 13px;
 }
 
-.slot-tooltip-count {
+.slot-tooltip-id {
+  color: #8b8b8b;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.slot-tooltip-line {
   color: #aaa;
   font-size: 11px;
+}
+
+/* Stacks / items toggle */
+
+.toolbar-toggle {
+  display: flex;
+}
+
+.toolbar-toggle button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border: 2px solid;
+  border-color: #555555 #ffffff #ffffff #555555;
+  background: #6b6b6b;
+  color: #ddd;
+}
+
+.toolbar-toggle button:hover {
+  background: #7c7c7c;
+}
+
+.toolbar-toggle .toolbar-toggle-on {
+  background: #4c7a3a;
+  border-color: #ffffff #555555 #555555 #ffffff;
+  color: #fff;
 }
