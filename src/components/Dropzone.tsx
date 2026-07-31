@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { DragEvent } from "react";
-import { isMaterialList, type MaterialList } from "../types";
+import { isMaterialList, mergeDuplicates, type MaterialList } from "../types";
 
 interface DropzoneProps {
   onLoaded: (list: MaterialList) => void;
@@ -20,7 +20,7 @@ export default function Dropzone({ onLoaded }: DropzoneProps) {
         setError("El JSON no tiene el formato esperado: { name, items: [{ id, count }] }");
         return;
       }
-      onLoaded(parsed);
+      onLoaded({ ...parsed, items: mergeDuplicates(parsed.items) });
     } catch {
       setError("No se pudo leer el archivo. Verifica que sea un JSON válido.");
     }

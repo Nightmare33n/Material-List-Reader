@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type * as THREE from "three";
 import { resolveBlockModel, particlePath } from "../mc/modelResolver";
 import { buildBlockMesh, disposeGroup } from "../mc/buildMesh";
@@ -20,61 +20,69 @@ interface Block3DProps {
  */
 export default function Block3D({ id, alt }: Block3DProps) {
   const anchorRef = useRef<HTMLDivElement>(null);
-  const [hasModel, setHasModel] = useState<boolean | null>(null);
-  const [particle, setParticle] = useState<string | null>(null);
+  const [group, setGroup] = useState<THREE.Group | null>(null);
+  const [fallbackParticle, setFallbackParticle] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
+    let cancelled = false;
+
+    setGroup(null);
+    setFallbackParticle(undefined);
+
     if (!isWebglAvailable()) {
-      setHasModel(false);
+      setFallbackParticle(null);
       return;
     }
-
-    let cancelled = false;
-    let group: THREE.Group | null = null;
-    let unregister: (() => void) | null = null;
-
-    setHasModel(null);
-    setParticle(null);
 
     resolveBlockModel(id)
       .then((model) => {
         if (cancelled) return;
         if (!model) {
-          setHasModel(false);
+          setFallbackParticle(null);
           return;
         }
 
         // A model can also reference a texture slot its parent never fills (pointed
         // dripstone's `#cross`), which builds an empty mesh rather than failing.
-        const built = model.elements.length ? buildBlockMesh(model, tintForBlock(id)) : null;
-        if (!built || built.children.length === 0) {
-          if (built) disposeGroup(built);
-          setParticle(particlePath(model));
-          setHasModel(false);
+        const mesh = model.elements.length ? buildBlockMesh(model, tintForBlock(id)) : null;
+        if (!mesh || mesh.children.length === 0) {
+          if (mesh) disposeGroup(mesh);
+          setFallbackParticle(particlePath(model));
           return;
         }
 
-        setHasModel(true);
-        group = built;
-
-        // The anchor only exists once hasModel flips to true, so wait a frame for it.
-        requestAnimationFrame(() => {
-          if (cancelled || !group || !anchorRef.current) return;
-          unregister = registerBlock(group, anchorRef.current);
-        });
+        setGroup(mesh);
       })
       .catch(() => {
-        if (!cancelled) setHasModel(false);
+        if (!cancelled) setFallbackParticle(null);
       });
 
     return () => {
       cancelled = true;
-      unregister?.();
-      if (group) disposeGroup(group);
     };
   }, [id]);
 
-  if (hasModel === false) return <BlockIcon2D id={id} alt={alt} particle={particle} />;
+  /*
+    Registering in a layout effect guarantees the anchor is already in the DOM: doing it
+    from a requestAnimationFrame callback could fire before React committed the element,
+    and that block would then never be drawn.
+
+    This effect also owns the mesh, so it is always unregistered before being disposed.
+  */
+  useLayoutEffect(() => {
+    const anchor = anchorRef.current;
+    if (!group || !anchor) return;
+
+    const unregister = registerBlock(group, anchor);
+    return () => {
+      unregister();
+      disposeGroup(group);
+    };
+  }, [group]);
+
+  if (fallbackParticle !== undefined) {
+    return <BlockIcon2D id={id} alt={alt} particle={fallbackParticle} />;
+  }
 
   return <div ref={anchorRef} className="block-3d" role="img" aria-label={alt} />;
 }

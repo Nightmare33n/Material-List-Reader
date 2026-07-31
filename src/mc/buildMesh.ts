@@ -180,11 +180,30 @@ function pushFace(
 const textureCache = new Map<string, THREE.Texture>();
 const materialCache = new Map<string, THREE.MeshBasicMaterial>();
 
+/**
+ * Animated textures ship as a vertical strip of square frames (a lantern is 16x48, three
+ * frames; fire is 16x512, thirty-two). Mapping a face across the whole strip squashes
+ * every frame into it, so the UV transform is narrowed to the first frame once the image
+ * has loaded and its real proportions are known.
+ */
+function clampToFirstFrame(texture: THREE.Texture): void {
+  const image = texture.image as { width?: number; height?: number } | undefined;
+  const width = image?.width ?? 0;
+  const height = image?.height ?? 0;
+
+  if (width <= 0 || height <= width || height % width !== 0) return;
+
+  const frames = height / width;
+  texture.repeat.set(1, 1 / frames);
+  // three's UV origin is the bottom-left, so the first frame sits at the top of the range.
+  texture.offset.set(0, 1 - 1 / frames);
+}
+
 function loadTexture(path: string): THREE.Texture {
   const cached = textureCache.get(path);
   if (cached) return cached;
 
-  const texture = new THREE.TextureLoader().load(textureUrl(path));
+  const texture = new THREE.TextureLoader().load(textureUrl(path), clampToFirstFrame);
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.NearestFilter;
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -255,6 +274,8 @@ export function buildBlockMesh(model: ResolvedModel, tint: number): THREE.Group 
 
   return group;
 }
+
+export const __testables = { clampToFirstFrame };
 
 export function disposeGroup(group: THREE.Group): void {
   group.traverse((obj) => {
